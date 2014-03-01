@@ -1,6 +1,8 @@
 Go Bintray
 ==========
 
+[![Build Status](https://travis-ci.org/enr/go-bintray.png?branch=master)](https://travis-ci.org/enr/go-bintray)
+
 Go library for accessing Bintray [https://bintray.com/] API.
 
 Import the library:

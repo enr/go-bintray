@@ -1,0 +1,16 @@
+
+language: go
+
+branches:
+  only:
+    - master
+
+go:
+ - 1.2
+
+before_script:
+ - go get -t ./...
+
+script:
+ - go test -v ./...
+
