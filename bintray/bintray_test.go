@@ -3,7 +3,6 @@ package bintray
 import (
 	"fmt"
 	"github.com/enr/go-commons/lang"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -149,11 +148,36 @@ func TestCreateVersion(t *testing.T) {
 	}
 }
 
+func TestCreateVersionWithMeta(t *testing.T) {
+	setup()
+	defer teardown()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "", 200)
+	})
+	reqJson := map[string]interface{} {"name": "version"}
+	err := client.CreateVersionWithMeta("subject", "repository", "pkg", "0.1.2", reqJson)
+	if err != nil {
+		t.Errorf("unexpected error thrown %s", err)
+	}
+}
+
+func TestCreateVersionWithMetaWithoutName(t *testing.T) {
+	setup()
+	defer teardown()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "", 200)
+	})
+	reqJson := map[string]interface{} {}
+	err := client.CreateVersionWithMeta("subject", "repository", "pkg", "0.1.2", reqJson)
+	if err == nil {
+		t.Errorf("expected error, got nil")
+	}
+}
+
 func TestUploadFile(t *testing.T) {
 	setup()
 	defer teardown()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		//fmt.Printf("Req %s\n", r.RequestURI)
 		fmt.Fprint(w, `{"A":"a"}`)
 	})
 	err := client.UploadFile("subject", "repository", "pkg", "1.2", "", "", "testdata/01.txt", false)
@@ -166,7 +190,6 @@ func TestPublish(t *testing.T) {
 	setup()
 	defer teardown()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		//fmt.Printf("Req %s\n", r.RequestURI)
 		fmt.Fprint(w, `{"A":"a"}`)
 	})
 	err := client.Publish("subject", "repository", "pkg", "1.2")
@@ -256,52 +279,5 @@ func testResponse(t *testing.T, response *BintrayResponse, expectedBody string, 
 func testHeader(t *testing.T, r *http.Request, header string, want string) {
 	if value := r.Header.Get(header); want != value {
 		t.Errorf("Header %s = %s, want: %s", header, value, want)
-	}
-}
-
-func handler(r *http.Request) {
-	reader, err := r.MultipartReader()
-	if err != nil {
-		//fmt.Println(err)
-		//http.Error(w, "not a form", http.StatusBadRequest)
-	}
-	defer r.Body.Close()
-
-	// read part by part
-	for {
-		part, err := reader.NextPart()
-		if err != nil {
-			if err == io.EOF {
-				// end of parts
-				break
-			}
-			//fmt.Println(err)
-			//http.Error(w, "bad form part", http.StatusBadRequest)
-		}
-
-		/**************************************************
-		        //if part.FileName() is empty, skip this iteration.
-				if part.FileName() == "" {
-					continue
-				}
-		        fmt.Println("filename: ", part.FileName())
-		        fmt.Println("formname: ", part.FormName())
-		        // use part.Read to read content
-				dst, err := os.Create("/home/sanat/" + part.FileName())
-				defer dst.Close()
-
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				if _, err := io.Copy(dst, part); err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				//display success message.
-				display(w, "upload", "Upload successful.")
-				***************************************************/
-		// then
-		part.Close()
 	}
 }

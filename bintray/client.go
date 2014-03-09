@@ -51,16 +51,12 @@ func (c *BintrayClient) PackageExists(subject, repository, pkg string) (bool, er
 		return false, errors.New("PackageExists: subject, repository and package name shouldn't be empty!")
 	}
 	url := "/packages/" + subject + "/" + repository + "/" + pkg
-	//fmt.Printf("url=%s\n", url)
 	req, err := c.newRequestWithReader("GET", url, nil, 0)
 	if err != nil {
 		return false, err
 	}
 	resp, err := c.execute(req)
-	//body, err := resp.BodyAsString()
-	//fmt.Printf("Body:\n%s\n", body)
 	if err != nil {
-		//fmt.Printf("Error calling %s - %v\n", url, err)
 		return false, err
 	}
 	return (resp.StatusCode == 200), nil
@@ -71,7 +67,6 @@ func (c *BintrayClient) GetVersions(subject, repository, pkg string) ([]string, 
 		return nil, errors.New("GetVersions: subject, repository and package name shouldn't be empty!")
 	}
 	url := "/packages/" + subject + "/" + repository + "/" + pkg
-	//fmt.Printf("url=%s\n", url)
 	req, err := c.newRequestWithReader("GET", url, nil, 0)
 	if err != nil {
 		return nil, err
@@ -86,29 +81,35 @@ func (c *BintrayClient) GetVersions(subject, repository, pkg string) ([]string, 
 	if err != nil {
 		return nil, err
 	}
-	var b map[string]interface{}
-	err = json.Unmarshal(body, &b)
+	versions, err := lang.ExtractJsonFieldValue(body, "versions")
 	if err != nil {
 		return nil, err
 	}
-	if versions, keyExists := b["versions"]; keyExists {
-		versionsSlice, err := lang.InterfaceToStringSlice(versions, "versions")
-		return versionsSlice, err
-	}
-	return nil, errors.New("Versions not listed!")
+	return lang.JsonArrayToStringSlice(versions, "versions")
+}
+
+//POST /packages/:subject/:repo/:package/versions
+func (c *BintrayClient) CreateVersionWithMeta(subject, repository, pkg, version string, reqJson map[string]interface{}) error {
+	return c.executeCreateVersion(subject, repository, pkg, version, reqJson)
 }
 
 //POST /packages/:subject/:repo/:package/versions
 func (c *BintrayClient) CreateVersion(subject, repository, pkg, version string) error {
+	reqJson := map[string]interface{}{"name": version}
+	return c.executeCreateVersion(subject, repository, pkg, version, reqJson)
+}
+
+func (c *BintrayClient) executeCreateVersion(subject, repository, pkg, version string, reqJson map[string]interface{}) error {
 	if subject == "" || repository == "" || pkg == "" || version == "" {
-		return errors.New("CreateVersion: subject, repository, package name and version shouldn't be empty!")
+		return errors.New("create version: subject, repository, package name and version shouldn't be empty!")
 	}
-	reqJson := map[string]interface{}{"name": version, "release_notes": "built by goxc", "release_url": "http://x.x.x/x/x"}
+	if _, vnameExists := reqJson["name"]; !vnameExists {
+		return errors.New("create version: metadata must contain the name key")
+	}
 	requestData, err := json.Marshal(reqJson)
 	if err != nil {
 		return err
 	}
-
 	url := "/packages/" + subject + "/" + repository + "/" + pkg + "/versions"
 	req, err := c.newRequestWithBody("POST", url, string(requestData))
 	if err != nil {
@@ -130,7 +131,6 @@ func (c *BintrayClient) UploadFile(subject, repository, pkg, version, projectGro
 	} else {
 		entityPath = version + "/" + fileName
 		uploadUrl = "content/" + subject + "/" + repository + "/" + pkg + "/" + entityPath
-
 	}
 	file, err := os.Open(fullPath)
 	if err != nil {
@@ -171,7 +171,6 @@ func (c *BintrayClient) Publish(subject, repository, pkg, version string) error 
 		return errors.New("Publish: subject, repository, package name and version shouldn't be empty!")
 	}
 	url := "/content/" + subject + "/" + repository + "/" + pkg + "/" + version + "/publish"
-	//fmt.Printf("url=%s\n", url)
 	req, err := c.newRequestWithReader("POST", url, nil, 0)
 	if err != nil {
 		return err
@@ -221,9 +220,7 @@ func (c *BintrayClient) newRequestWithReader(method, urlStr string, requestReade
 	if err != nil {
 		return nil, err
 	}
-
 	u := c.BaseURL.ResolveReference(rel)
-
 	req, err := http.NewRequest(method, u.String(), requestReader)
 	if err != nil {
 		return nil, err
