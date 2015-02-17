@@ -81,11 +81,11 @@ func (c *BintrayClient) GetVersions(subject, repository, pkg string) ([]string, 
 	if err != nil {
 		return nil, err
 	}
-	versions, err := lang.ExtractJsonFieldValue(body, "versions")
+	versions, err := lang.ExtractJSONFieldValue(body, "versions")
 	if err != nil {
 		return nil, err
 	}
-	return lang.JsonArrayToStringSlice(versions, "versions")
+	return lang.JSONArrayToStringSlice(versions, "versions")
 }
 
 //POST /packages/:subject/:repo/:package/versions
@@ -148,18 +148,18 @@ func (c *BintrayClient) UploadFile(subject, repository, pkg, version, projectGro
 	}
 	_, err = c.execute(req)
 	/*
-	if serr, ok := err.(httpError); ok {
-		if serr.statusCode == 409 {
-			//conflict. skip
-			//continue but dont publish.
-			//TODO - provide an option to replace existing artifact
-			//TODO - ?check exists before attempting upload?
-		} else {
-			
-		}
-	} else if err != nil {
+		if serr, ok := err.(httpError); ok {
+			if serr.statusCode == 409 {
+				//conflict. skip
+				//continue but dont publish.
+				//TODO - provide an option to replace existing artifact
+				//TODO - ?check exists before attempting upload?
+			} else {
 
-	}
+			}
+		} else if err != nil {
+
+		}
 	*/
 	return err
 }
