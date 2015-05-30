@@ -2,12 +2,13 @@ package bintray
 
 import (
 	"fmt"
-	"github.com/enr/go-commons/lang"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/enr/go-commons/lang"
 )
 
 const (
@@ -154,7 +155,7 @@ func TestCreateVersionWithMeta(t *testing.T) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", 200)
 	})
-	reqJson := map[string]interface{} {"name": "version"}
+	reqJson := map[string]interface{}{"name": "version"}
 	err := client.CreateVersionWithMeta("subject", "repository", "pkg", "0.1.2", reqJson)
 	if err != nil {
 		t.Errorf("unexpected error thrown %s", err)
@@ -167,7 +168,7 @@ func TestCreateVersionWithMetaWithoutName(t *testing.T) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", 200)
 	})
-	reqJson := map[string]interface{} {}
+	reqJson := map[string]interface{}{}
 	err := client.CreateVersionWithMeta("subject", "repository", "pkg", "0.1.2", reqJson)
 	if err == nil {
 		t.Errorf("expected error, got nil")

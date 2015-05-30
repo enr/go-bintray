@@ -1,16 +1,25 @@
 
-language: go
+sudo: false
 
 branches:
   only:
     - master
 
-go:
- - 1.2
+language: go
 
-before_script:
- - go get -t ./...
+go:
+ - 1.4
+ - tip
+
+before_install:
+  - go get golang.org/x/tools/cmd/cover
+  - go get golang.org/x/tools/cmd/vet
 
 script:
- - go test -v ./...
+  - go vet ./...
+  - go test -race ./...
+  - go test -cover ./...
 
+matrix:
+  allow_failures:
+    - go: tip
