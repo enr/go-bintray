@@ -121,7 +121,7 @@ func (c *BintrayClient) executeCreateVersion(subject, repository, pkg, version s
 }
 
 //PUT /content/:subject/:repo/:package/:version/:path
-func (c *BintrayClient) UploadFile(subject, repository, pkg, version, projectGroupId, projectName, filePath string, mavenRepo bool) error {
+func (c *BintrayClient) UploadFile(subject, repository, pkg, version, projectGroupId, projectName, filePath, extraArgs string, mavenRepo bool) error {
 	fullPath, _ := filepath.Abs(filePath)
 	var entityPath string
 	var uploadUrl string
@@ -131,7 +131,7 @@ func (c *BintrayClient) UploadFile(subject, repository, pkg, version, projectGro
 		uploadUrl = "content/" + subject + "/" + repository + "/" + pkg + "/" + version + "/" + entityPath
 	} else {
 		entityPath = version + "/" + fileName
-		uploadUrl = "content/" + subject + "/" + repository + "/" + pkg + "/" + entityPath
+		uploadUrl = "content/" + subject + "/" + repository + "/" + pkg + "/" + entityPath + extraArgs
 	}
 	file, err := os.Open(fullPath)
 	if err != nil {
