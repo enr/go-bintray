@@ -181,7 +181,7 @@ func TestUploadFile(t *testing.T) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"A":"a"}`)
 	})
-	err := client.UploadFile("subject", "repository", "pkg", "1.2", "", "", "testdata/01.txt", false)
+	err := client.UploadFile("subject", "repository", "pkg", "1.2", "", "", "testdata/01.txt", "", false)
 	if err != nil {
 		t.Errorf("unexpected error thrown %s", err)
 	}

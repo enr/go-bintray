@@ -84,13 +84,13 @@ Example:
 API:
 
 ```Go
-    UploadFile(subject, repository, pkg, version, projectGroupId, projectName, filePath string, mavenRepo bool) error
+    UploadFile(subject, repository, pkg, version, projectGroupId, projectName, filePath, extraArgs string, mavenRepo bool) error
 ```
 
 Example:
 
 ```Go
-    err := client.UploadFile("subject", "repository", "pkg", "1.2", "", "", "testdata/01.txt", false)
+    err := client.UploadFile("subject", "repository", "pkg", "1.2", "", "", "testdata/01.txt", "", false)
     if err != nil {
         t.Errorf("unexpected error thrown %s", err)
     }
