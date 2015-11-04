@@ -5,22 +5,29 @@ import (
 	"net/http"
 )
 
-type BintrayResponse struct {
+// Response wraps the Bintray API response.
+type Response struct {
 	*http.Response
 }
 
-func newResponse(r *http.Response) *BintrayResponse {
-	response := &BintrayResponse{Response: r}
+func newResponse(r *http.Response) *Response {
+	response := &Response{Response: r}
 	return response
 }
-func (r *BintrayResponse) BodyAsString() (string, error) {
+
+// BodyAsString returns the response body as string.
+func (r *Response) BodyAsString() (string, error) {
 	body, err := r.readAndCloseResponseBody()
 	return string(body), err
 }
-func (r *BintrayResponse) BodyAsBytes() ([]byte, error) {
+
+// BodyAsBytes returns the response body as bytes slice.
+func (r *Response) BodyAsBytes() ([]byte, error) {
 	return r.readAndCloseResponseBody()
 }
-func (r *BintrayResponse) readAndCloseResponseBody() ([]byte, error) {
+
+// BodyAsString returns the response body as string.
+func (r *Response) readAndCloseResponseBody() ([]byte, error) {
 	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	return body, err

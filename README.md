@@ -19,13 +19,13 @@ Import the library:
 API:
 
 ```Go
-    NewClient(httpClient *http.Client, subject, apikey string) *BintrayClient
+    NewClient(httpClient *http.Client, subject, apikey string) *Client
 ```
 
 Example:
 
 ```Go
-    c := NewClient(nil, "subject", "apikey")
+    c := bintray.NewClient(nil, "subject", "apikey")
 ```
 
 **Package exists**

@@ -13,7 +13,7 @@ import (
 
 const (
 	// response body for /subject/repository/pkg
-	RESP_BODY_PKG = `
+	respBodyPkg = `
 {"name":"optools","repo":"prova","owner":"enrico","desc":"this entity does...","labels":[],"attribute_names":[],"followers":0,
 "created":"2013-03-04T09:50:00.742Z","versions":["0.1","0.1.1","0.4","0.9"],"latest_version":"0.9",
 "updated":"2013-03-04T09:50:00.742Z","rating_count":0}`
@@ -23,14 +23,14 @@ var (
 	// mux is the HTTP request multiplexer used with the test server.
 	mux *http.ServeMux
 
-	// client is the BintrayClient client being tested.
-	client *BintrayClient
+	// client is the Client client being tested.
+	client *Client
 
 	// server is a test HTTP server used to provide mock API responses.
 	server *httptest.Server
 )
 
-// setup sets up a test HTTP server along with a bintray.BintrayClient that is
+// setup sets up a test HTTP server along with a bintray.Client that is
 // configured to talk to that test server.  Tests should register handlers on
 // mux which provide mock responses for the API method being tested.
 func setup() {
@@ -105,7 +105,7 @@ func TestPackageExists_true(t *testing.T) {
 	setup()
 	defer teardown()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, RESP_BODY_PKG, 200)
+		http.Error(w, respBodyPkg, 200)
 	})
 	pe, err := client.PackageExists("subject", "repository", "pkg")
 	if err != nil {
@@ -121,7 +121,7 @@ func TestGetVersions(t *testing.T) {
 	defer teardown()
 	expectedVersions := []string{"0.1", "0.1.1", "0.4", "0.9"}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, RESP_BODY_PKG, 200)
+		http.Error(w, respBodyPkg, 200)
 	})
 	versions, err := client.GetVersions("subject", "repository", "pkg")
 	if err != nil {
@@ -155,8 +155,8 @@ func TestCreateVersionWithMeta(t *testing.T) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", 200)
 	})
-	reqJson := map[string]interface{}{"name": "version"}
-	err := client.CreateVersionWithMeta("subject", "repository", "pkg", "0.1.2", reqJson)
+	reqJSON := map[string]interface{}{"name": "version"}
+	err := client.CreateVersionWithMeta("subject", "repository", "pkg", "0.1.2", reqJSON)
 	if err != nil {
 		t.Errorf("unexpected error thrown %s", err)
 	}
@@ -168,8 +168,8 @@ func TestCreateVersionWithMetaWithoutName(t *testing.T) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", 200)
 	})
-	reqJson := map[string]interface{}{}
-	err := client.CreateVersionWithMeta("subject", "repository", "pkg", "0.1.2", reqJson)
+	reqJSON := map[string]interface{}{}
+	err := client.CreateVersionWithMeta("subject", "repository", "pkg", "0.1.2", reqJSON)
 	if err == nil {
 		t.Errorf("expected error, got nil")
 	}
@@ -263,7 +263,7 @@ func TestExecute_redirectLoop(t *testing.T) {
 	}
 }
 
-func testResponse(t *testing.T, response *BintrayResponse, expectedBody string, expectedStatusCode int) {
+func testResponse(t *testing.T, response *Response, expectedBody string, expectedStatusCode int) {
 	body, err := response.BodyAsString()
 	if err != nil {
 		t.Errorf("Error getting response body: %#v.", err)

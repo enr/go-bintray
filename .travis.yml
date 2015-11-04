@@ -1,23 +1,31 @@
-
 sudo: false
+
+language: go
+
+os:
+  - linux
+  - osx
 
 branches:
   only:
     - master
 
-language: go
-
 go:
- - 1.4
- - tip
+  - 1.5
+  - tip
 
 before_install:
-  - go get golang.org/x/tools/cmd/cover
-  - go get golang.org/x/tools/cmd/vet
+  - go get ./...
+  - go get -u github.com/golang/lint/golint
+  - go get -u golang.org/x/tools/cmd/goimports
+  - go get -u golang.org/x/tools/cmd/cover
+  - go get -u golang.org/x/tools/cmd/vet
 
 script:
   - go vet ./...
-  - go test -race ./...
+  - diff <(goimports -d .) <(printf "")
+  - diff <(golint ./...) <(printf "")
+  - go test -v -cpu=1,2,4 -race ./...
   - go test -cover ./...
 
 matrix:

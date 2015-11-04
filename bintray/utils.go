@@ -1,7 +1,7 @@
 package bintray
 
 const (
-	libraryId      = "go-bintray"
+	libraryID      = "go-bintray"
 	libraryVersion = "0.1"
 	/*
 		From Bintray docs:
@@ -11,6 +11,6 @@ const (
 		https://bintray.com/api/v1
 	*/
 	defaultBaseURL      = "https://api.bintray.com/"
-	userAgent           = libraryId + "/" + libraryVersion
+	userAgent           = libraryID + "/" + libraryVersion
 	defaultDownloadHost = "https://dl.bintray.com/"
 )

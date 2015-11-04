@@ -16,7 +16,7 @@ import (
 )
 
 // A Client manages communication with the Bintray API.
-type BintrayClient struct {
+type Client struct {
 	// HTTP client used to communicate with the API.
 	client *http.Client
 
@@ -34,20 +34,20 @@ type BintrayClient struct {
 	downloadsHost string
 }
 
-// NewClient returns a new BintrayClient API client. If a nil httpClient is
+// NewClient returns a new Client API client. If a nil httpClient is
 // provided, http.DefaultClient will be used.
-func NewClient(httpClient *http.Client, subject, apikey string) *BintrayClient {
+func NewClient(httpClient *http.Client, subject, apikey string) *Client {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
 	baseURL, _ := url.Parse(defaultBaseURL)
-	c := &BintrayClient{client: httpClient, BaseURL: baseURL, UserAgent: userAgent, subject: subject, apikey: apikey}
+	c := &Client{client: httpClient, BaseURL: baseURL, UserAgent: userAgent, subject: subject, apikey: apikey}
 	return c
 }
 
-// Find if package is present
+// PackageExists returns if a given package is present in the repository.
 // GET /packages/:subject/:repo/:package
-func (c *BintrayClient) PackageExists(subject, repository, pkg string) (bool, error) {
+func (c *Client) PackageExists(subject, repository, pkg string) (bool, error) {
 	if subject == "" || repository == "" || pkg == "" {
 		return false, errors.New("PackageExists: subject, repository and package name shouldn't be empty!")
 	}
@@ -63,7 +63,8 @@ func (c *BintrayClient) PackageExists(subject, repository, pkg string) (bool, er
 	return (resp.StatusCode == 200), nil
 }
 
-func (c *BintrayClient) GetVersions(subject, repository, pkg string) ([]string, error) {
+// GetVersions returns all versions for the given package.
+func (c *Client) GetVersions(subject, repository, pkg string) ([]string, error) {
 	if subject == "" || repository == "" || pkg == "" {
 		return nil, errors.New("GetVersions: subject, repository and package name shouldn't be empty!")
 	}
@@ -89,25 +90,27 @@ func (c *BintrayClient) GetVersions(subject, repository, pkg string) ([]string, 
 	return lang.JSONArrayToStringSlice(versions, "versions")
 }
 
+// CreateVersionWithMeta creates a new version adding metadata.
 //POST /packages/:subject/:repo/:package/versions
-func (c *BintrayClient) CreateVersionWithMeta(subject, repository, pkg, version string, reqJson map[string]interface{}) error {
-	return c.executeCreateVersion(subject, repository, pkg, version, reqJson)
+func (c *Client) CreateVersionWithMeta(subject, repository, pkg, version string, reqJSON map[string]interface{}) error {
+	return c.executeCreateVersion(subject, repository, pkg, version, reqJSON)
 }
 
+// CreateVersion creates new version for a package.
 //POST /packages/:subject/:repo/:package/versions
-func (c *BintrayClient) CreateVersion(subject, repository, pkg, version string) error {
-	reqJson := map[string]interface{}{"name": version}
-	return c.executeCreateVersion(subject, repository, pkg, version, reqJson)
+func (c *Client) CreateVersion(subject, repository, pkg, version string) error {
+	reqJSON := map[string]interface{}{"name": version}
+	return c.executeCreateVersion(subject, repository, pkg, version, reqJSON)
 }
 
-func (c *BintrayClient) executeCreateVersion(subject, repository, pkg, version string, reqJson map[string]interface{}) error {
+func (c *Client) executeCreateVersion(subject, repository, pkg, version string, reqJSON map[string]interface{}) error {
 	if subject == "" || repository == "" || pkg == "" || version == "" {
-		return errors.New("create version: subject, repository, package name and version shouldn't be empty!")
+		return errors.New("create version: subject, repository, package name and version shouldn't be empty")
 	}
-	if _, vnameExists := reqJson["name"]; !vnameExists {
+	if _, vnameExists := reqJSON["name"]; !vnameExists {
 		return errors.New("create version: metadata must contain the name key")
 	}
-	requestData, err := json.Marshal(reqJson)
+	requestData, err := json.Marshal(reqJSON)
 	if err != nil {
 		return err
 	}
@@ -120,18 +123,18 @@ func (c *BintrayClient) executeCreateVersion(subject, repository, pkg, version s
 	return err
 }
 
-//PUT /content/:subject/:repo/:package/:version/:path
-func (c *BintrayClient) UploadFile(subject, repository, pkg, version, projectGroupId, projectName, filePath, extraArgs string, mavenRepo bool) error {
+// UploadFile uploads a file into `/content/:subject/:repo/:package/:version/:path`.
+func (c *Client) UploadFile(subject, repository, pkg, version, projectGroupID, projectName, filePath, extraArgs string, mavenRepo bool) error {
 	fullPath, _ := filepath.Abs(filePath)
 	var entityPath string
-	var uploadUrl string
+	var uploadURL string
 	fileName := filepath.Base(fullPath)
 	if mavenRepo {
-		entityPath = strings.Replace(projectGroupId, ".", "/", -1) + "/" + projectName + "/" + version + "/" + fileName
-		uploadUrl = "content/" + subject + "/" + repository + "/" + pkg + "/" + version + "/" + entityPath
+		entityPath = strings.Replace(projectGroupID, ".", "/", -1) + "/" + projectName + "/" + version + "/" + fileName
+		uploadURL = "content/" + subject + "/" + repository + "/" + pkg + "/" + version + "/" + entityPath
 	} else {
 		entityPath = version + "/" + fileName
-		uploadUrl = "content/" + subject + "/" + repository + "/" + pkg + "/" + entityPath + extraArgs
+		uploadURL = "content/" + subject + "/" + repository + "/" + pkg + "/" + entityPath + extraArgs
 	}
 	file, err := os.Open(fullPath)
 	if err != nil {
@@ -143,7 +146,7 @@ func (c *BintrayClient) UploadFile(subject, repository, pkg, version, projectGro
 		return err
 	}
 
-	req, err := c.newRequestWithReader("PUT", uploadUrl, file, fi.Size())
+	req, err := c.newRequestWithReader("PUT", uploadURL, file, fi.Size())
 	if err != nil {
 		return err
 	}
@@ -165,9 +168,8 @@ func (c *BintrayClient) UploadFile(subject, repository, pkg, version, projectGro
 	return err
 }
 
-// cambiare a return boolean, error
-// true se body.files > 0
-func (c *BintrayClient) Publish(subject, repository, pkg, version string) error {
+// Publish an uploaded file.
+func (c *Client) Publish(subject, repository, pkg, version string) error {
 	if subject == "" || repository == "" || pkg == "" || version == "" {
 		return errors.New("Publish: subject, repository, package name and version shouldn't be empty!")
 	}
@@ -194,7 +196,7 @@ func (c *BintrayClient) Publish(subject, repository, pkg, version string) error 
 }
 
 // execute sends an API request and returns the API response and error if any.
-func (c *BintrayClient) execute(req *http.Request) (*BintrayResponse, error) {
+func (c *Client) execute(req *http.Request) (*Response, error) {
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -205,7 +207,7 @@ func (c *BintrayClient) execute(req *http.Request) (*BintrayResponse, error) {
 // newRequestWithBody creates an API request using the given string as the body.
 // A relative URL can be provided in urlStr, in which case it is resolved relative to the BaseURL of the Client.
 // Relative URLs should always be specified without a preceding slash.
-func (c *BintrayClient) newRequestWithBody(method, urlStr, body string) (*http.Request, error) {
+func (c *Client) newRequestWithBody(method, urlStr, body string) (*http.Request, error) {
 	requestData := []byte(body)
 	requestLength := int64(len(requestData))
 	requestReader := bytes.NewReader(requestData)
@@ -216,7 +218,7 @@ func (c *BintrayClient) newRequestWithBody(method, urlStr, body string) (*http.R
 // newRequestWithReader creates an API request.
 // A relative URL can be provided in urlStr, in which case it is resolved relative to the BaseURL of the Client.
 // Relative URLs should always be specified without a preceding slash.
-func (c *BintrayClient) newRequestWithReader(method, urlStr string, requestReader io.Reader, requestLength int64) (*http.Request, error) {
+func (c *Client) newRequestWithReader(method, urlStr string, requestReader io.Reader, requestLength int64) (*http.Request, error) {
 	rel, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, err
