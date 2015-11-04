@@ -4,7 +4,7 @@ Go Bintray
 [![Build Status](https://travis-ci.org/enr/go-bintray.png?branch=master)](https://travis-ci.org/enr/go-bintray)
 [![Build status](https://ci.appveyor.com/api/projects/status/hqiotpa8gqt25bhy?svg=true)](https://ci.appveyor.com/project/enr/go-bintray)
 
-Go library for accessing Bintray [https://bintray.com/] API.
+Go library for accessing [Bintray](https://bintray.com/) API.
 
 Import the library:
 
