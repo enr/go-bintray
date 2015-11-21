@@ -57,7 +57,8 @@ func (c *Client) PackageExists(subject, repository, pkg string) (bool, error) {
 		return false, err
 	}
 	resp, err := c.execute(req)
-	if err != nil {
+	// we consider 404 an acceptable error in this case.
+	if err, ok := err.(*ErrorResponse); ok && err.Response.StatusCode != http.StatusNotFound {
 		return false, err
 	}
 	return (resp.StatusCode == 200), nil
@@ -201,7 +202,12 @@ func (c *Client) execute(req *http.Request) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newResponse(resp), err
+	response := newResponse(resp)
+
+	err = CheckResponse(resp)
+	// even though there was an error, we still return the response
+	// in case the caller wants to inspect it further
+	return response, err
 }
 
 // newRequestWithBody creates an API request using the given string as the body.
@@ -236,4 +242,16 @@ func (c *Client) newRequestWithReader(method, urlStr string, requestReader io.Re
 		req.SetBasicAuth(c.subject, c.apikey)
 	}
 	return req, nil
+}
+
+// CheckResponse checks the API response for errors, and returns them if
+// present.  A response is considered an error if it has a status code outside
+// the 200 range.
+func CheckResponse(r *http.Response) error {
+	c := r.StatusCode
+	if 200 <= c && c <= 299 {
+		return nil
+	}
+	errorResponse := &ErrorResponse{Response: r}
+	return errorResponse
 }

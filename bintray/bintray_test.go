@@ -70,21 +70,30 @@ func TestExecute(t *testing.T) {
 }
 
 // test for error response management
-func TestExecute_httpError(t *testing.T) {
+func TestExecute_httpError400(t *testing.T) {
+	errorCodes := []int{400, 401, 500}
+	for _, code := range errorCodes {
+		testHTTPError(t, code)
+	}
+}
+
+func testHTTPError(t *testing.T, statusCode int) {
 	setup()
 	defer teardown()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "Bad Request", 400)
+		http.Error(w, "Bad Request", statusCode)
 	})
 	req, err := client.newRequestWithBody("GET", "/", "request_data")
 	if err != nil {
 		t.Errorf("Expected nil error; got %#v.", err)
 	}
-	response, err := client.execute(req)
-	if err != nil {
-		t.Errorf("Expected nil error; got %#v.", err)
+	_, err = client.execute(req)
+	if err == nil {
+		t.Errorf("Expected HTTP %d error.", statusCode)
 	}
-	testResponse(t, response, "Bad Request", 400)
+	if err, ok := err.(*ErrorResponse); ok && err.Response.StatusCode != statusCode {
+		t.Errorf("Expected HTTP %d error, got %d", statusCode, err.Response.StatusCode)
+	}
 }
 
 func TestPackageExists_false(t *testing.T) {
