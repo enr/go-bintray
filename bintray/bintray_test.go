@@ -17,6 +17,22 @@ const (
 {"name":"optools","repo":"prova","owner":"enrico","desc":"this entity does...","labels":[],"attribute_names":[],"followers":0,
 "created":"2013-03-04T09:50:00.742Z","versions":["0.1","0.1.1","0.4","0.9"],"latest_version":"0.9",
 "updated":"2013-03-04T09:50:00.742Z","rating_count":0}`
+
+	// response body for /subjec/repository/package/files
+	filesResp = `
+	[
+		{
+			"name": "nutcracker-1.1-sources.jar",
+			"path": "org/jfrog/powerutils/nutcracker/1.1/nutcracker-1.1-sources.jar",
+			"package": "jfrog-power-utils",
+			"version": "1.1",
+			"repo": "jfrog-jars",
+			"owner": "jfrog",
+			"created": "ISO8601 (yyyy-MM-dd'T'HH:mm:ss.SSSZ)",
+			"size": 1234,
+			"sha1": "602e20176706d3cc7535f01ffdbe91b270ae5012"
+		}
+	]`
 )
 
 var (
@@ -143,6 +159,27 @@ func TestGetVersions(t *testing.T) {
 		if !lang.SliceContainsString(expectedVersions, v) {
 			t.Errorf("versions %s not expected", v)
 		}
+	}
+}
+
+func TestGetFilesList(t *testing.T) {
+	setup()
+	defer teardown()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "%s", filesResp)
+	})
+
+	result, err := client.GetFilesList("subject", "repository", "pkg", "version", false)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if len(result) != 1 {
+		t.Errorf("UNexpected result length: %d", len(result))
+	}
+
+	if result[0] != "org/jfrog/powerutils/nutcracker/1.1/nutcracker-1.1-sources.jar" {
+		t.Errorf("unexpected path returned: %s", result[0])
 	}
 }
 
