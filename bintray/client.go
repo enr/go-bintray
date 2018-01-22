@@ -34,6 +34,19 @@ type Client struct {
 	downloadsHost string
 }
 
+// FileData contains informations about a file stored on Bintray
+type FileData struct {
+	Name string `json:"name"`
+	Path string `json:"path"`
+	Package string `json:"package"`
+	Version string `json:"version"`
+	Repo string `json:"repo"`
+	Owner string `json:"owner"`
+	Created string `json:"created"`
+	Size int `json:"size"`
+	Sha1 string `json:"sha1"`
+}
+
 // NewClient returns a new Client API client. If a nil httpClient is
 // provided, http.DefaultClient will be used.
 func NewClient(httpClient *http.Client, subject, apikey string) *Client {
@@ -89,6 +102,49 @@ func (c *Client) GetVersions(subject, repository, pkg string) ([]string, error) 
 		return nil, err
 	}
 	return lang.JSONArrayToStringSlice(versions, "versions")
+}
+
+// GetFilesInfoList returns a FileData struct for each file in the specified version
+func (c *Client) GetFilesInfoList(subject , repository, pkg, version string, includeUnpublished bool) ([]FileData, error) {
+	if subject == "" || repository == "" || pkg == "" || version == "" {
+		return nil, errors.New("GetVersions: subject, repository, package name and version shouldn't be empty")
+	}
+	unpublished := ""
+	if includeUnpublished {
+		unpublished = "?include_unpublished=1"
+	}
+	url := fmt.Sprintf("/packages/%s/%s/%s/versions/%s/files%s", subject, repository, pkg, version, unpublished)
+	req, err := c.newRequestWithReader("GET", url, nil, 0)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.execute(req)
+	if err != nil {
+		return nil, err
+	}
+	body, err := resp.BodyAsBytes()
+	if err != nil {
+		return nil, err
+	}
+	data := make([]FileData, 0)
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+// GetFilesList returns the list of files for a specific version
+func (c *Client) GetFilesList(subject , repository, pkg, version string, includeUnpublished bool) ([]string, error) {
+	data, err := c.GetFilesInfoList(subject, repository, pkg, version, includeUnpublished)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, 0)
+	for _, d := range data {
+		result = append(result, d.Path)
+	}
+	return result, nil
 }
 
 // CreateVersionWithMeta creates a new version adding metadata.
