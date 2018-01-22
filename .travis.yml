@@ -22,8 +22,8 @@ before_install:
 
 script:
   - go vet ./...
-  - diff <(goimports -d .) <(printf "")
-  - diff <(golint ./...) <(printf "")
+  # - diff <(goimports -d .) <(printf "")
+  # - diff <(golint ./...) <(printf "")
   - go test -v -cpu=1,2,4 -race ./...
   - go test -cover ./...
 
