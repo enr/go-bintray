@@ -12,7 +12,7 @@ environment:
   GOPATH: c:\gopath
   matrix:
   - GOARCH: amd64
-    GOVERSION: 1.5
+    GOVERSION: 1.9.2
 
 install:
   - echo %GOPATH%
@@ -21,7 +21,6 @@ install:
   - go env
   - go get -v -t ./...
   - go get -u golang.org/x/tools/cmd/cover
-  - go get -u golang.org/x/tools/cmd/vet
 
 build_script:
   - go vet ./...
